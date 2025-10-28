@@ -1,0 +1,7 @@
+
+# Plugin settings
+show-inventory-info: true
+
+debug: true
+use-minecraft-format: true
+show-advanced-tooltips: true

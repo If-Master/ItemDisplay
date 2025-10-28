@@ -1,0 +1,62 @@
+name: ItemDisplay
+version: '1.0'
+main: me.kanuunankuulaspluginsItems.ItemDisplay.ItemDisplay
+api-version: '1.21'
+authors: [ Kanuunankuula (IF_Master) ]
+description: Shows information over item in chat
+softdepend: [EssentialsX, HeadHunter]
+folia-supported: true
+
+commands:
+  viewinv:
+    description: Hidden command to view inventories (triggered by clicking chat)
+    usage: /viewinv <player>
+    permission: itemdisplay.viewinv
+  itemdisplay:
+    description: Allows reloading of the command
+    usage: /itemdisplay reload
+    permission: itemdisplay.admin
+  testhex:
+    description: Test hex color conversion
+    usage: /testhex
+    permission: itemdisplay.admin
+  testitem:
+    description: Test item hover text generation
+    usage: /testitem
+    permission: itemdisplay.admin
+  invedit:
+    description: Edit a player's inventory (admin only)
+    usage: /invedit <player>
+    permission: itemdisplay.admin.invedit
+    permission-message: You don't have permission to use this command!
+
+  echest:
+    description: Edit a player's ender chest (admin only)
+    usage: /echest <player>
+    permission: itemdisplay.admin.echest
+    permission-message: You don't have permission to use this command!
+
+
+
+permissions:
+  itemdisplay.admin:
+    description: Allows use of admin commands
+    default: op
+  itemdisplay.viewinv:
+    description: Allows use of view command
+    default: op
+  itemdisplay.admin.invedit:
+    description: Allows editing player inventories
+    default: op
+
+  itemdisplay.admin.echest:
+    description: Allows editing player ender chests
+    default: op
+
+  itemdisplay.admin.*:
+    description: Grants all admin permissions
+    default: op
+    children:
+      itemdisplay.admin.invedit: true
+      itemdisplay.admin.echest: true
+      itemdisplay.admin: true
