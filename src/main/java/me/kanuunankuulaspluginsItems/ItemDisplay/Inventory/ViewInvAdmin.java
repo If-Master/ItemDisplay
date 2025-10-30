@@ -17,6 +17,8 @@ import static org.bukkit.ChatColor.*;
 public class ViewInvAdmin {
     private static final String ADMIN_INV_SUFFIX = "'s Inventory (Admin)";
     public static final String ADMIN_ENDER_SUFFIX = "'s Ender Chest (Admin)";
+    public static final String InventoryAdminPerm = "itemdisplay.admin.invedit";
+    public static final String EchestAdminPerm = "itemdisplay.admin.echest";
 
     private static int syncTaskId = -1;
 
@@ -47,7 +49,6 @@ public class ViewInvAdmin {
             try {
                 Bukkit.getScheduler().cancelTask(syncTaskId);
             } catch (Exception e) {
-                // Ignore
             }
         }
 
@@ -60,7 +61,9 @@ public class ViewInvAdmin {
     }
 
     private static void syncAllAdminViews() {
-        for (Map.Entry<UUID, UUID> entry : new HashMap<>(adminViewingPlayer).entrySet()) {
+        Iterator<Map.Entry<UUID, UUID>> iterator = adminViewingPlayer.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, UUID> entry = iterator.next();
             UUID adminUUID = entry.getKey();
             UUID targetUUID = entry.getValue();
 
@@ -68,6 +71,18 @@ public class ViewInvAdmin {
             Player target = Bukkit.getPlayer(targetUUID);
 
             if (admin == null || !admin.isOnline() || target == null || !target.isOnline()) {
+                continue;
+            }
+
+            if (!hasRequiredPermission(admin, adminUUID)) {
+                admin.closeInventory();
+                admin.sendMessage(RED + "✗ " + GRAY + "Your permission to edit inventories has been revoked!");
+                iterator.remove();
+                adminViewingType.remove(adminUUID);
+                offlineInventoryData.remove(adminUUID);
+                lastKnownInventoryState.remove(adminUUID);
+                lastKnownArmorState.remove(adminUUID);
+                lastKnownOffhandState.remove(adminUUID);
                 continue;
             }
 
@@ -80,7 +95,11 @@ public class ViewInvAdmin {
                 if (!isAdminViewInventory(invTitle)) {
                     continue;
                 }
-
+                if (invTitle.contains(ADMIN_ENDER_SUFFIX)) {
+                    if (!admin.hasPermission(EchestAdminPerm)) return;
+                } else {
+                if (!admin.hasPermission(InventoryAdminPerm)) return;
+}
                 Inventory adminView = admin.getOpenInventory().getTopInventory();
                 boolean isInventory = adminViewingType.getOrDefault(adminUUID, true);
 
@@ -328,6 +347,11 @@ public class ViewInvAdmin {
     }
 
     public static void openPlayerInventory(Player admin, OfflinePlayer target) {
+        if (!hasInventoryPermission(admin)) {
+            admin.sendMessage(RED + "✗ " + GRAY + "You don't have permission to edit inventories!");
+            return;
+        }
+
         if (target.isOnline()) {
             openOnlinePlayerInventory(admin, target.getPlayer());
         } else {
@@ -495,6 +519,11 @@ public class ViewInvAdmin {
     }
 
     public static void openPlayerEnderChest(Player admin, OfflinePlayer target) {
+        if (!hasEnderChestPermission(admin)) {
+            admin.sendMessage(RED + "✗ " + GRAY + "You don't have permission to edit ender chests!");
+            return;
+        }
+
         if (target.isOnline()) {
             openOnlinePlayerEnderChest(admin, target.getPlayer());
         } else {
@@ -580,6 +609,10 @@ public class ViewInvAdmin {
     public static void saveInventoryChanges(Player admin, Inventory inv) {
         UUID adminUUID = admin.getUniqueId();
         if (!adminViewingPlayer.containsKey(adminUUID)) return;
+        if (!hasRequiredPermission(admin, adminUUID)) {
+            admin.sendMessage(RED + "✗ " + GRAY + "You don't have permission to save inventory changes!");
+            return;
+        }
 
         UUID targetUUID = adminViewingPlayer.get(adminUUID);
         Player target = Bukkit.getPlayer(targetUUID);
@@ -603,6 +636,15 @@ public class ViewInvAdmin {
     }
 
     private static void saveOfflineInventoryChanges(Player admin, Inventory inv, UUID targetUUID, boolean isInventory) {
+        if (isInventory && !hasInventoryPermission(admin)) {
+            admin.sendMessage(RED + "✗ " + GRAY + "You don't have permission to save inventory changes!");
+            return;
+        }
+        if (!isInventory && !hasEnderChestPermission(admin)) {
+            admin.sendMessage(RED + "✗ " + GRAY + "You don't have permission to save ender chest changes!");
+            return;
+        }
+
         if (!offlineInventoryData.containsKey(admin.getUniqueId())) {
             admin.sendMessage(RED + "✗ " + GRAY + "User left, before you saving, please run the command again.");
             return;
@@ -637,12 +679,12 @@ public class ViewInvAdmin {
                 if (isInventory) {
                     for (int i = 0; i < 27; i++) {
                         ItemStack item = inv.getItem(i);
-                        data.inventory[i + 9] = (item != null && !isPlaceholder(item)) ? item : null;
+                        data.inventory[i + 9] = (item != null && !isPlaceholderItem(item)) ? item : null;
                     }
 
                     for (int i = 0; i < 9; i++) {
                         ItemStack item = inv.getItem(27 + i);
-                        data.inventory[i] = (item != null && !isPlaceholder(item)) ? item : null;
+                        data.inventory[i] = (item != null && !isPlaceholderItem(item)) ? item : null;
                     }
 
                     ItemStack helmet = inv.getItem(47);
@@ -650,17 +692,17 @@ public class ViewInvAdmin {
                     ItemStack leggings = inv.getItem(49);
                     ItemStack boots = inv.getItem(50);
 
-                    data.armor[3] = (helmet != null && !isPlaceholder(helmet)) ? helmet : null;
-                    data.armor[2] = (chestplate != null && !isPlaceholder(chestplate)) ? chestplate : null;
-                    data.armor[1] = (leggings != null && !isPlaceholder(leggings)) ? leggings : null;
-                    data.armor[0] = (boots != null && !isPlaceholder(boots)) ? boots : null;
+                    data.armor[3] = (helmet != null && !isPlaceholderItem(helmet)) ? helmet : null;
+                    data.armor[2] = (chestplate != null && !isPlaceholderItem(chestplate)) ? chestplate : null;
+                    data.armor[1] = (leggings != null && !isPlaceholderItem(leggings)) ? leggings : null;
+                    data.armor[0] = (boots != null && !isPlaceholderItem(boots)) ? boots : null;
 
                     ItemStack offhand = inv.getItem(52);
-                    data.offhand = (offhand != null && !isPlaceholder(offhand)) ? offhand : null;
+                    data.offhand = (offhand != null && !isPlaceholderItem(offhand)) ? offhand : null;
                 } else {
                     for (int i = 0; i < 27; i++) {
                         ItemStack item = inv.getItem(i);
-                        data.enderChest[i] = (item != null && !isPlaceholder(item)) ? item : null;
+                        data.enderChest[i] = (item != null && !isPlaceholderItem(item)) ? item : null;
                     }
                 }
 
@@ -705,7 +747,7 @@ public class ViewInvAdmin {
     private static void saveInventoryChangesToPlayer(Player target, Inventory adminView) {
         for (int i = 0; i < 27; i++) {
             ItemStack item = adminView.getItem(i);
-            if (item != null && isPlaceholder(item)) {
+            if (item != null && isPlaceholderItem(item)) {
                 target.getInventory().setItem(i + 9, null);
             } else {
                 target.getInventory().setItem(i + 9, item);
@@ -714,7 +756,7 @@ public class ViewInvAdmin {
 
         for (int i = 0; i < 9; i++) {
             ItemStack item = adminView.getItem(27 + i);
-            if (item != null && isPlaceholder(item)) {
+            if (item != null && isPlaceholderItem(item)) {
                 target.getInventory().setItem(i, null);
             } else {
                 target.getInventory().setItem(i, item);
@@ -726,13 +768,13 @@ public class ViewInvAdmin {
         ItemStack leggings = adminView.getItem(49);
         ItemStack boots = adminView.getItem(50);
 
-        target.getInventory().setItem(39, (helmet != null && !isPlaceholder(helmet)) ? helmet : null);
-        target.getInventory().setItem(38, (chestplate != null && !isPlaceholder(chestplate)) ? chestplate : null);
-        target.getInventory().setItem(37, (leggings != null && !isPlaceholder(leggings)) ? leggings : null);
-        target.getInventory().setItem(36, (boots != null && !isPlaceholder(boots)) ? boots : null);
+        target.getInventory().setItem(39, (helmet != null && !isPlaceholderItem(helmet)) ? helmet : null);
+        target.getInventory().setItem(38, (chestplate != null && !isPlaceholderItem(chestplate)) ? chestplate : null);
+        target.getInventory().setItem(37, (leggings != null && !isPlaceholderItem(leggings)) ? leggings : null);
+        target.getInventory().setItem(36, (boots != null && !isPlaceholderItem(boots)) ? boots : null);
 
         ItemStack offhand = adminView.getItem(52);
-        target.getInventory().setItemInOffHand((offhand != null && !isPlaceholder(offhand)) ? offhand : null);
+        target.getInventory().setItemInOffHand((offhand != null && !isPlaceholderItem(offhand)) ? offhand : null);
 
         target.updateInventory();
     }
@@ -740,7 +782,7 @@ public class ViewInvAdmin {
     private static void saveEnderChestChangesToPlayer(Player target, Inventory adminView) {
         for (int i = 0; i < 27; i++) {
             ItemStack item = adminView.getItem(i);
-            if (item != null && isPlaceholder(item)) {
+            if (item != null && isPlaceholderItem(item)) {
                 target.getEnderChest().setItem(i, null);
             } else {
                 target.getEnderChest().setItem(i, item);
@@ -792,70 +834,6 @@ public class ViewInvAdmin {
         return displayName.contains("Empty") && displayName.contains("Slot");
     }
 
-    public static void updateInventoryRealtime(Player admin, Inventory inv) {
-        UUID adminUUID = admin.getUniqueId();
-        if (!adminViewingPlayer.containsKey(adminUUID)) return;
-
-        UUID targetUUID = adminViewingPlayer.get(adminUUID);
-        Player target = Bukkit.getPlayer(targetUUID);
-
-        if (target != null && target.isOnline()) {
-            boolean isInventory = adminViewingType.getOrDefault(adminUUID, true);
-
-            if (isInventory) {
-                updateInventoryToPlayer(target, inv);
-            } else {
-                updateEnderChestToPlayer(target, inv);
-            }
-        }
-    }
-
-    private static void updateInventoryToPlayer(Player target, Inventory adminView) {
-        for (int i = 0; i < 27; i++) {
-            ItemStack item = adminView.getItem(i);
-            if (item != null && isPlaceholderItem(item)) {
-                target.getInventory().setItem(i + 9, null);
-            } else {
-                target.getInventory().setItem(i + 9, item);
-            }
-        }
-
-        for (int i = 0; i < 9; i++) {
-            ItemStack item = adminView.getItem(27 + i);
-            if (item != null && isPlaceholderItem(item)) {
-                target.getInventory().setItem(i, null);
-            } else {
-                target.getInventory().setItem(i, item);
-            }
-        }
-
-        ItemStack helmet = adminView.getItem(47);
-        ItemStack chestplate = adminView.getItem(48);
-        ItemStack leggings = adminView.getItem(49);
-        ItemStack boots = adminView.getItem(50);
-
-        target.getInventory().setItem(39, (helmet != null && !isPlaceholderItem(helmet)) ? helmet : null);
-        target.getInventory().setItem(38, (chestplate != null && !isPlaceholderItem(chestplate)) ? chestplate : null);
-        target.getInventory().setItem(37, (leggings != null && !isPlaceholderItem(leggings)) ? leggings : null);
-        target.getInventory().setItem(36, (boots != null && !isPlaceholderItem(boots)) ? boots : null);
-
-        ItemStack offhand = adminView.getItem(52);
-        target.getInventory().setItemInOffHand((offhand != null && !isPlaceholderItem(offhand)) ? offhand : null);
-
-        target.updateInventory();
-    }
-
-    private static void updateEnderChestToPlayer(Player target, Inventory adminView) {
-        for (int i = 0; i < 27; i++) {
-            ItemStack item = adminView.getItem(i);
-            target.getEnderChest().setItem(i, item);
-        }
-    }
-
-    private static boolean isPlaceholder(ItemStack item) {
-        return isPlaceholderItem(item);
-    }
-
     private static void runAsync(Runnable task) {
         if (plugin == null) {
             throw new IllegalStateException("ViewInvAdmin not initialized! Call initialize() first.");
@@ -890,4 +868,15 @@ public class ViewInvAdmin {
         Object nbtCompound;
         File playerFile;
     }
+    private static boolean hasInventoryPermission(Player admin) {
+        return admin.hasPermission(InventoryAdminPerm);
+    }
+    private static boolean hasEnderChestPermission(Player admin) {
+        return admin.hasPermission(EchestAdminPerm);
+    }
+    private static boolean hasRequiredPermission(Player admin, UUID adminUUID) {
+        boolean isInventory = adminViewingType.getOrDefault(adminUUID, true);
+        return isInventory ? hasInventoryPermission(admin) : hasEnderChestPermission(admin);
+    }
+
 }
