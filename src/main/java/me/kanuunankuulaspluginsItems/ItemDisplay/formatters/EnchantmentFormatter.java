@@ -6,15 +6,21 @@ import org.bukkit.enchantments.Enchantment;
 import static me.kanuunankuulaspluginsItems.ItemDisplay.ItemDisplay.*;
 
 public class EnchantmentFormatter {
+
+    static {
+        initializeCaches();
+    }
+
     public static double getBaseAttackDamage(Material material) {
         return attackDamageCache.getOrDefault(material, 0.0);
     }
+
     public static double getBaseAttackSpeed(Material material) {
         return attackSpeedCache.getOrDefault(material, 0.0);
     }
 
     public static void initializeCaches() {
-        // Attack Damage
+        // Attack Damage - Swords
         attackDamageCache.put(Material.NETHERITE_SWORD, 8.0);
         attackDamageCache.put(Material.DIAMOND_SWORD, 7.0);
         attackDamageCache.put(Material.IRON_SWORD, 6.0);
@@ -22,6 +28,7 @@ public class EnchantmentFormatter {
         attackDamageCache.put(Material.GOLDEN_SWORD, 4.0);
         attackDamageCache.put(Material.WOODEN_SWORD, 4.0);
 
+        // Attack Damage - Pickaxes
         attackDamageCache.put(Material.NETHERITE_PICKAXE, 6.0);
         attackDamageCache.put(Material.DIAMOND_PICKAXE, 5.0);
         attackDamageCache.put(Material.IRON_PICKAXE, 4.0);
@@ -29,6 +36,7 @@ public class EnchantmentFormatter {
         attackDamageCache.put(Material.GOLDEN_PICKAXE, 2.0);
         attackDamageCache.put(Material.WOODEN_PICKAXE, 2.0);
 
+        // Attack Damage - Shovels
         attackDamageCache.put(Material.NETHERITE_SHOVEL, 6.5);
         attackDamageCache.put(Material.DIAMOND_SHOVEL, 5.5);
         attackDamageCache.put(Material.IRON_SHOVEL, 4.5);
@@ -36,13 +44,13 @@ public class EnchantmentFormatter {
         attackDamageCache.put(Material.GOLDEN_SHOVEL, 2.5);
         attackDamageCache.put(Material.WOODEN_SHOVEL, 2.5);
 
-        attackDamageCache.put(Material.NETHERITE_HOE, 1.0);
-        attackDamageCache.put(Material.DIAMOND_HOE, 1.0);
-        attackDamageCache.put(Material.IRON_HOE, 1.0);
-        attackDamageCache.put(Material.STONE_HOE, 1.0);
-        attackDamageCache.put(Material.GOLDEN_HOE, 1.0);
-        attackDamageCache.put(Material.WOODEN_HOE, 1.0);
+        // Attack Damage - Hoes (all 1.0)
+        for (Material m : new Material[]{Material.NETHERITE_HOE, Material.DIAMOND_HOE, Material.IRON_HOE,
+                Material.STONE_HOE, Material.GOLDEN_HOE, Material.WOODEN_HOE}) {
+            attackDamageCache.put(m, 1.0);
+        }
 
+        // Attack Damage - Axes
         attackDamageCache.put(Material.NETHERITE_AXE, 10.0);
         attackDamageCache.put(Material.DIAMOND_AXE, 9.0);
         attackDamageCache.put(Material.IRON_AXE, 9.0);
@@ -50,31 +58,29 @@ public class EnchantmentFormatter {
         attackDamageCache.put(Material.GOLDEN_AXE, 7.0);
         attackDamageCache.put(Material.WOODEN_AXE, 7.0);
 
+        // Attack Damage - Special
         attackDamageCache.put(Material.TRIDENT, 9.0);
         attackDamageCache.put(Material.MACE, 6.0);
 
-        // Attack speed
-        attackSpeedCache.put(Material.NETHERITE_SWORD, 1.6);
-        attackSpeedCache.put(Material.DIAMOND_SWORD, 1.6);
-        attackSpeedCache.put(Material.IRON_SWORD, 1.6);
-        attackSpeedCache.put(Material.GOLDEN_SWORD, 1.6);
-        attackSpeedCache.put(Material.STONE_SWORD, 1.6);
-        attackSpeedCache.put(Material.WOODEN_SWORD, 1.6);
+        // Attack Speed - Swords (all 1.6)
+        for (Material m : new Material[]{Material.NETHERITE_SWORD, Material.DIAMOND_SWORD, Material.IRON_SWORD,
+                Material.GOLDEN_SWORD, Material.STONE_SWORD, Material.WOODEN_SWORD}) {
+            attackSpeedCache.put(m, 1.6);
+        }
 
-        attackSpeedCache.put(Material.NETHERITE_PICKAXE, 1.2);
-        attackSpeedCache.put(Material.DIAMOND_PICKAXE, 1.2);
-        attackSpeedCache.put(Material.IRON_PICKAXE, 1.2);
-        attackSpeedCache.put(Material.GOLDEN_PICKAXE, 1.2);
-        attackSpeedCache.put(Material.STONE_PICKAXE, 1.2);
-        attackSpeedCache.put(Material.WOODEN_PICKAXE, 1.2);
+        // Attack Speed - Pickaxes (all 1.2)
+        for (Material m : new Material[]{Material.NETHERITE_PICKAXE, Material.DIAMOND_PICKAXE, Material.IRON_PICKAXE,
+                Material.GOLDEN_PICKAXE, Material.STONE_PICKAXE, Material.WOODEN_PICKAXE}) {
+            attackSpeedCache.put(m, 1.2);
+        }
 
-        attackSpeedCache.put(Material.NETHERITE_SHOVEL, 1.0);
-        attackSpeedCache.put(Material.DIAMOND_SHOVEL, 1.0);
-        attackSpeedCache.put(Material.IRON_SHOVEL, 1.0);
-        attackSpeedCache.put(Material.GOLDEN_SHOVEL, 1.0);
-        attackSpeedCache.put(Material.STONE_SHOVEL, 1.0);
-        attackSpeedCache.put(Material.WOODEN_SHOVEL, 1.0);
+        // Attack Speed - Shovels (all 1.0)
+        for (Material m : new Material[]{Material.NETHERITE_SHOVEL, Material.DIAMOND_SHOVEL, Material.IRON_SHOVEL,
+                Material.GOLDEN_SHOVEL, Material.STONE_SHOVEL, Material.WOODEN_SHOVEL}) {
+            attackSpeedCache.put(m, 1.0);
+        }
 
+        // Attack Speed - Hoes (varied)
         attackSpeedCache.put(Material.NETHERITE_HOE, 4.0);
         attackSpeedCache.put(Material.DIAMOND_HOE, 4.0);
         attackSpeedCache.put(Material.IRON_HOE, 3.0);
@@ -82,6 +88,7 @@ public class EnchantmentFormatter {
         attackSpeedCache.put(Material.STONE_HOE, 2.0);
         attackSpeedCache.put(Material.WOODEN_HOE, 1.0);
 
+        // Attack Speed - Axes
         attackSpeedCache.put(Material.NETHERITE_AXE, 1.0);
         attackSpeedCache.put(Material.DIAMOND_AXE, 1.0);
         attackSpeedCache.put(Material.IRON_AXE, 0.9);
@@ -89,54 +96,27 @@ public class EnchantmentFormatter {
         attackSpeedCache.put(Material.STONE_AXE, 0.8);
         attackSpeedCache.put(Material.WOODEN_AXE, 0.8);
 
+        // Attack Speed - Special
         attackSpeedCache.put(Material.TRIDENT, 1.1);
         attackSpeedCache.put(Material.MACE, 0.6);
 
-        // Enchantments
-        enchantmentOrderCache.put("binding_curse", 0);
-        enchantmentOrderCache.put("vanishing_curse", 1);
-        enchantmentOrderCache.put("riptide", 2);
-        enchantmentOrderCache.put("channeling", 3);
-        enchantmentOrderCache.put("wind_burst", 4);
-        enchantmentOrderCache.put("frost_walker", 5);
-        enchantmentOrderCache.put("sharpness", 6);
-        enchantmentOrderCache.put("smite", 7);
-        enchantmentOrderCache.put("bane_of_arthropods", 8);
-        enchantmentOrderCache.put("impaling", 9);
-        enchantmentOrderCache.put("power", 10);
-        enchantmentOrderCache.put("density", 11);
-        enchantmentOrderCache.put("breach", 12);
-        enchantmentOrderCache.put("piercing", 13);
-        enchantmentOrderCache.put("sweeping", 14);
-        enchantmentOrderCache.put("multishot", 15);
-        enchantmentOrderCache.put("fire_aspect", 16);
-        enchantmentOrderCache.put("flame", 17);
-        enchantmentOrderCache.put("knockback", 18);
-        enchantmentOrderCache.put("punch", 19);
-        enchantmentOrderCache.put("protection", 20);
-        enchantmentOrderCache.put("blast_protection", 21);
-        enchantmentOrderCache.put("fire_protection", 22);
-        enchantmentOrderCache.put("projectile_protection", 23);
-        enchantmentOrderCache.put("feather_falling", 24);
-        enchantmentOrderCache.put("fortune", 25);
-        enchantmentOrderCache.put("looting", 26);
-        enchantmentOrderCache.put("silk_touch", 27);
-        enchantmentOrderCache.put("luck_of_the_sea", 28);
-        enchantmentOrderCache.put("efficiency", 29);
-        enchantmentOrderCache.put("quick_charge", 30);
-        enchantmentOrderCache.put("lure", 31);
-        enchantmentOrderCache.put("respiration", 32);
-        enchantmentOrderCache.put("aqua_affinity", 33);
-        enchantmentOrderCache.put("soul_speed", 34);
-        enchantmentOrderCache.put("swift_sneak", 35);
-        enchantmentOrderCache.put("depth_strider", 36);
-        enchantmentOrderCache.put("thorns", 37);
-        enchantmentOrderCache.put("loyalty", 38);
-        enchantmentOrderCache.put("unbreaking", 39);
-        enchantmentOrderCache.put("infinity", 40);
-        enchantmentOrderCache.put("mending", 41);
-    }
+        // Enchantment Order
+        String[] enchantOrder = {
+                "binding_curse", "vanishing_curse", "riptide", "channeling", "wind_burst",
+                "frost_walker", "sharpness", "smite", "bane_of_arthropods", "impaling",
+                "power", "density", "breach", "piercing", "sweeping", "multishot",
+                "fire_aspect", "flame", "knockback", "punch", "protection",
+                "blast_protection", "fire_protection", "projectile_protection", "feather_falling",
+                "fortune", "looting", "silk_touch", "luck_of_the_sea", "efficiency",
+                "quick_charge", "lure", "respiration", "aqua_affinity", "soul_speed",
+                "swift_sneak", "depth_strider", "thorns", "loyalty", "unbreaking",
+                "infinity", "mending"
+        };
 
+        for (int i = 0; i < enchantOrder.length; i++) {
+            enchantmentOrderCache.put(enchantOrder[i], i);
+        }
+    }
 
     public static String formatEnchantmentName(Enchantment enchant) {
         String name = enchant.getKey().getKey();
@@ -182,18 +162,15 @@ public class EnchantmentFormatter {
             case "mending": return "Mending";
             case "vanishing_curse": return "Curse of Vanishing";
             default:
-                String formatted = name.replace("_", " ").toLowerCase();
-                String[] words = formatted.split(" ");
                 StringBuilder result = new StringBuilder();
-                for (String word : words) {
+                for (String word : name.split("_")) {
                     if (!word.isEmpty()) {
                         result.append(Character.toUpperCase(word.charAt(0)))
-                                .append(word.substring(1))
+                                .append(word.substring(1).toLowerCase())
                                 .append(" ");
                     }
                 }
                 return result.toString().trim();
         }
     }
-
 }
