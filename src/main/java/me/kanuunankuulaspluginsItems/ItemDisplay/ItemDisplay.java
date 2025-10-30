@@ -57,12 +57,19 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
     private FileConfiguration config;
     public static NamespacedKey viewOnlyKey;
     public static NamespacedKey headOwnerKey;
+    public static Plugin Itemdisplay;
 
     public static final String VIEW_ONLY_MARKER = "itemdisplay_viewonly";
     private static final String KANUUNANKUULA_NAME = "Kanuunankuula"; // 1239 Line, ( Only a joke if the server is using HeadHunter too)
     public static final String INVENTORY_TITLE_SUFFIX = "'s Inventory";
 
     public static final String VIEW_ONLY_MARKET_TWO = "itemdisplay_viewonly";
+    private static final String[] ROMAN_NUMERALS = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
+
+    private boolean useMinecraftFormat;
+    private boolean showAdvancedTooltips;
+    private boolean debug;
+
 
     private boolean isFolia = false;
 
@@ -78,6 +85,15 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
 
     public static Set<UUID> sharedInventories = new HashSet<>();
 
+    public static void Log(String Message, String type) {
+        if (type == "warn") {
+            Itemdisplay.getLogger().warning(Message);
+        } else if (type == "error") {
+            Itemdisplay.getLogger().warning("ERROR: "+ Message);
+        } else {
+            Itemdisplay.getLogger().info(Message);
+        }
+    }
     @Override
     public void onEnable() {
         try {
@@ -109,11 +125,13 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
             config.set("show-advanced-tooltips", true);
             saveConfig();
         }
+        loadConfigCache();
 
         getServer().getPluginManager().registerEvents(this, this);
 
         initializeCaches();
         initializeCategories();
+        Itemdisplay = this;
 
         if (!setupVaultChat()) {
             getLogger().warning("Vault Chat not found! Prefixes will not work.");
@@ -179,6 +197,11 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
             }
         }
     }
+    private void loadConfigCache() {
+        this.useMinecraftFormat = config.getBoolean("use-minecraft-format", true);
+        this.showAdvancedTooltips = config.getBoolean("show-advanced-tooltips", true);
+        this.debug = config.getBoolean("debug", false);
+    }
 
     @Override
     public void onDisable() {
@@ -228,6 +251,7 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
 
                 reloadConfig();
                 config = getConfig();
+                loadConfigCache();
                 loadItemDescriptions();
                 sender.sendMessage(GREEN + "Item descriptions reloaded!");
                 return true;
@@ -305,7 +329,7 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
             return true;
         }
 
-        if (command.getName().equalsIgnoreCase("echest")) {
+        if (command.getName().equalsIgnoreCase("echestedit")) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage(RED + "Only players can use this command!");
                 return true;
@@ -319,7 +343,7 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
             }
 
             if (args.length == 0) {
-                admin.sendMessage(RED + "Usage: /echest <player>");
+                admin.sendMessage(RED + "Usage: /echestedit <player>");
                 return true;
             }
 
@@ -347,7 +371,7 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
 
         if (command.getName().equalsIgnoreCase("viewinv") ||
                 command.getName().equalsIgnoreCase("invedit") ||
-                command.getName().equalsIgnoreCase("echest")) {
+                command.getName().equalsIgnoreCase("echestedit")) {
 
             if (args.length == 1) {
                 String partial = args[0].toLowerCase();
@@ -670,11 +694,22 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         String invTitle = event.getView().getTitle();
 
         if (ViewInvAdmin.isAdminViewInventory(invTitle)) {
+
             int slot = event.getRawSlot();
             ItemStack clickedItem = event.getCurrentItem();
             ItemStack cursorItem = event.getCursor();
 
             boolean isEnderChest = invTitle.contains(ViewInvAdmin.ADMIN_ENDER_SUFFIX);
+            String requiredPerm = isEnderChest ? ViewInvAdmin.EchestAdminPerm : ViewInvAdmin.InventoryAdminPerm;
+
+            if (!admin.hasPermission(requiredPerm)) {
+                event.setCancelled(true);
+                admin.closeInventory();
+                admin.sendMessage(RED + "✗ " + GRAY + "You don't have permission to edit inventories!");
+                ViewInvAdmin.cleanupAdminView(adminUUID);
+                return;
+            }
+
             int inventorySize = event.getInventory().getSize();
 
             if (slot >= inventorySize) {
@@ -860,6 +895,17 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         String invTitle = event.getView().getTitle();
 
         if (ViewInvAdmin.isAdminViewInventory(invTitle)) {
+            boolean isEnderChest = invTitle.contains(ViewInvAdmin.ADMIN_ENDER_SUFFIX);
+            String requiredPerm = isEnderChest ? ViewInvAdmin.EchestAdminPerm : ViewInvAdmin.InventoryAdminPerm;
+
+            if (!admin.hasPermission(requiredPerm)) {
+                admin.closeInventory();
+                admin.sendMessage(RED + "✗ " + GRAY + "You don't have permission to edit inventories!");
+                ViewInvAdmin.cleanupAdminView(admin.getUniqueId());
+                return;
+            }
+
+
             ViewInvAdmin.saveInventoryChanges(admin, event.getInventory());
             ViewInvAdmin.cleanupAdminView(adminUUID);
             return;
@@ -969,11 +1015,7 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
 
 
     private String buildMinecraftTooltip(ItemStack item) {
-        boolean useMinecraftFormat = config.getBoolean("use-minecraft-format", true);
-        boolean showAdvancedTooltips = config.getBoolean("show-advanced-tooltips", true);
-        boolean debug = config.getBoolean("debug", false);
-
-        if (!useMinecraftFormat) {
+        if (!this.useMinecraftFormat) {
             return buildLegacyTooltip(item);
         }
 
@@ -1080,10 +1122,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
             tooltip.append("\n§7Flight Duration: §f1");
         }
 
-        if (hasEnchants) {
-            tooltip.append("");
-        }
-
         Map<Enchantment, Integer> enchantments = item.getEnchantments();
         if (!enchantments.isEmpty()) {
             List<Map.Entry<Enchantment, Integer>> sortedEnchants = new ArrayList<>(enchantments.entrySet());
@@ -1097,12 +1135,9 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
                 Enchantment enchant = entry.getKey();
                 int level = entry.getValue();
                 String enchantName = formatEnchantmentName(enchant);
+                String colorCode = enchant.isCursed() ? "§c" : "§7";
 
-                if (enchant.isCursed()) {
-                    tooltip.append("\n§c").append(enchantName);
-                } else {
-                    tooltip.append("\n§7").append(enchantName);
-                }
+                tooltip.append("\n").append(colorCode).append(enchantName);
 
                 if (level > 1 || enchant.getMaxLevel() > 1) {
                     tooltip.append(" ").append(toRomanNumeral(level));
@@ -1264,9 +1299,8 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
 
     private String toRomanNumeral(int number) {
         if (number <= 0) return "";
-        String[] romanNumerals = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
-        if (number < romanNumerals.length) {
-            return romanNumerals[number];
+        if (number < ROMAN_NUMERALS.length) {
+            return ROMAN_NUMERALS[number];
         }
         return String.valueOf(number);
     }
