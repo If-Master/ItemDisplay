@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 import static org.bukkit.ChatColor.*;
 
 public class Colors {
+    private static final Pattern HEX_PATTERN = Pattern.compile("(&#[A-Fa-f0-9]{6})");
+
     // Enchantments
     public static org.bukkit.ChatColor getEnchantmentColor(Enchantment enchant, int level) {
         if (enchant.isCursed()) {
@@ -65,9 +67,8 @@ public class Colors {
             return new TextComponent("");
         }
 
-        Pattern hexPattern = Pattern.compile("(&#[A-Fa-f0-9]{6})");
-        String[] parts = hexPattern.split(text);
-        Matcher matcher = hexPattern.matcher(text);
+        String[] parts = HEX_PATTERN.split(text);
+        Matcher matcher = HEX_PATTERN.matcher(text);
 
         TextComponent component = new TextComponent();
         int partIndex = 0;
@@ -101,7 +102,6 @@ public class Colors {
     }
 
 
-    // Idk
     public static String getColorName(Color color) {
         if (color.equals(Color.RED)) return "Red";
         if (color.equals(Color.BLUE)) return "Blue";
