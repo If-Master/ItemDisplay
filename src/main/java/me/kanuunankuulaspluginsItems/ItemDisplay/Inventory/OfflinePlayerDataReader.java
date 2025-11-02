@@ -12,7 +12,7 @@ import java.util.zip.GZIPOutputStream;
 
 
 public class OfflinePlayerDataReader {
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
 
     private static class ReflectionCache {
         static Class<?> nbtCompoundClass;
@@ -138,6 +138,7 @@ public class OfflinePlayerDataReader {
             return false;
         }
     }
+
     private static void initializeIOMethodsOptimized() throws Exception {
         try {
             ReflectionCache.nbtRead = ReflectionCache.nbtIoClass.getMethod("readCompressed", java.nio.file.Path.class, ReflectionCache.nbtAccounterClass);
@@ -167,6 +168,7 @@ public class OfflinePlayerDataReader {
             }
         }
     }
+
     private static Object getUnlimitedAccounter() throws Exception {
         try {
             Field unlimitedHeap = ReflectionCache.nbtAccounterClass.getField("unlimitedHeap");
@@ -252,7 +254,7 @@ public class OfflinePlayerDataReader {
         Object enderList = getNBTList(nbtTagCompound, "EnderItems");
 
         if (enderList != null) {
-            int enderSize = getNBTListSize(enderList); 
+            int enderSize = getNBTListSize(enderList);
             if (DEBUG) logDebug("EnderItems list size: " + enderSize);
 
             for (int i = 0; i < enderSize; i++) {
@@ -411,7 +413,7 @@ public class OfflinePlayerDataReader {
             return null;
         }
     }
-    
+
     private static Object itemStackToNBT(ItemStack item) throws Exception {
         Object nbtTag = createNBTCompound();
 
@@ -505,7 +507,6 @@ public class OfflinePlayerDataReader {
 
         setNBTCompound(nbtTag, "display", display);
     }
-
     private static <T> T unwrapOptional(Object result, T defaultValue) {
         if (result == null) return defaultValue;
 
@@ -667,19 +668,6 @@ public class OfflinePlayerDataReader {
         }
     }
 
-    private static Class<?> getNBTBaseClassObject() throws ClassNotFoundException {
-        try {
-            return Class.forName("net.minecraft.nbt.Tag");
-        } catch (ClassNotFoundException e) {
-            try {
-                return Class.forName("net.minecraft.nbt.NBTBase");
-            } catch (ClassNotFoundException e2) {
-                String version = getServerVersion();
-                return Class.forName("net.minecraft.server." + version + ".NBTBase");
-            }
-        }
-    }
-
     private static void setNBTShort(Object compound, String key, short value) throws Exception {
         ReflectionCache.compoundPutShort.invoke(compound, key, value);
     }
@@ -694,9 +682,6 @@ public class OfflinePlayerDataReader {
 
     private static void setNBTCompound(Object compound, String key, Object value) throws Exception {
         ReflectionCache.compoundPut.invoke(compound, key, value);
-    }
-    private static String getServerVersion() {
-        return ReflectionCache.serverVersion;
     }
 
     private static void logDebug(String message) {
