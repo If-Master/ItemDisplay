@@ -60,7 +60,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
     public static Plugin Itemdisplay;
 
     public static final String VIEW_ONLY_MARKER = "itemdisplay_viewonly";
-    private static final String KANUUNANKUULA_NAME = "Kanuunankuula"; // 1239 Line, ( Only a joke if the server is using HeadHunter too)
     public static final String INVENTORY_TITLE_SUFFIX = "'s Inventory";
 
     public static final String VIEW_ONLY_MARKET_TWO = "itemdisplay_viewonly";
@@ -400,7 +399,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
                 itemConfig.set("descriptions.NETHER_STAR", "Dropped by the Wither");
                 itemConfig.set("descriptions.DRAGON_EGG", "A trophy from the End");
                 itemConfig.set("descriptions.OAK_BOAT", "Bro, why? It's a boat. Nothing special");
-                itemConfig.set("descriptions.PLAYER_HEAD", "Bro, why? It's a player? Hopefully not Kanuunankuula");
                 itemConfig.set("descriptions.COMMAND_BLOCK", "Alright a Illegal item ;) Probably eating it rn");
                 itemConfig.set("descriptions.PORKCHOP", "The flesh who walk the fields");
 
@@ -1270,10 +1268,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
             ItemMeta meta = item.getItemMeta();
             if (headOwnerKey != null && meta.getPersistentDataContainer().has(headOwnerKey, PersistentDataType.STRING)) {
                 String headOwner = meta.getPersistentDataContainer().get(headOwnerKey, PersistentDataType.STRING);
-
-                if (KANUUNANKUULA_NAME.equalsIgnoreCase(headOwner)) {
-                    return "NOOOO, Not Kanuunankuula you monster, He's our Saviour, and person who coded these plugins";
-                }
 
                 return "A head which belongings to " + headOwner;
             }
