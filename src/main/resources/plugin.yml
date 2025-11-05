@@ -1,5 +1,5 @@
 name: ItemDisplay
-version: '1.0'
+version: '1.1.1'
 main: me.kanuunankuulaspluginsItems.ItemDisplay.ItemDisplay
 api-version: '1.21'
 authors: [ Kanuunankuula (IF_Master) ]
@@ -16,23 +16,15 @@ commands:
     description: Allows reloading of the command
     usage: /itemdisplay reload
     permission: itemdisplay.admin
-  testhex:
-    description: Test hex color conversion
-    usage: /testhex
-    permission: itemdisplay.admin
-  testitem:
-    description: Test item hover text generation
-    usage: /testitem
-    permission: itemdisplay.admin
   invedit:
     description: Edit a player's inventory (admin only)
     usage: /invedit <player>
     permission: itemdisplay.admin.invedit
     permission-message: You don't have permission to use this command!
 
-  echest:
+  echestedit:
     description: Edit a player's ender chest (admin only)
-    usage: /echest <player>
+    usage: /echestedit <player>
     permission: itemdisplay.admin.echest
     permission-message: You don't have permission to use this command!
 
