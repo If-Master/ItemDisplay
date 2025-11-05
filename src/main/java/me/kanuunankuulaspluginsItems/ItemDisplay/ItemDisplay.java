@@ -1,5 +1,6 @@
 package me.kanuunankuulaspluginsItems.ItemDisplay;
 
+import me.kanuunankuulaspluginsItems.ItemDisplay.Chat.ItemLinkHandler;
 import me.kanuunankuulaspluginsItems.ItemDisplay.Inventory.ViewInvAdmin;
 import net.milkbowl.vault.chat.Chat;
 import org.bukkit.Bukkit;
@@ -11,7 +12,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,9 +22,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.hover.content.Text;
 import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,14 +34,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.NamespacedKey;
-import org.bukkit.potion.PotionType;
 
-import static me.kanuunankuulaspluginsItems.ItemDisplay.formatters.AttributeFormatter.*;
-import static me.kanuunankuulaspluginsItems.ItemDisplay.formatters.Colors.*;
-import static me.kanuunankuulaspluginsItems.ItemDisplay.formatters.EnchantmentFormatter.*;
-import static me.kanuunankuulaspluginsItems.ItemDisplay.formatters.ItemNameFormatter.*;
-import static me.kanuunankuulaspluginsItems.ItemDisplay.formatters.PotionFormatter.*;
-import static me.kanuunankuulaspluginsItems.ItemDisplay.formatters.FireworkFormatter.*;
 
 import static me.kanuunankuulaspluginsItems.ItemDisplay.Inventory.ViewInvNormal.*;
 
@@ -53,7 +43,7 @@ import static org.bukkit.ChatColor.*;
 
 public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor {
 
-    private static Chat vaultChat;
+    public static Chat vaultChat;
     private FileConfiguration config;
     public static NamespacedKey viewOnlyKey;
     public static NamespacedKey headOwnerKey;
@@ -65,9 +55,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
     public static final String VIEW_ONLY_MARKET_TWO = "itemdisplay_viewonly";
     private static final String[] ROMAN_NUMERALS = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
 
-    private boolean useMinecraftFormat;
-    private boolean showAdvancedTooltips;
-    private boolean debug;
     private boolean chatCommandIEnabled;
     private boolean chatCommandInvEnabled;
 
@@ -140,7 +127,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
 
         getServer().getPluginManager().registerEvents(this, this);
 
-        initializeCaches();
         initializeCategories();
         Itemdisplay = this;
 
@@ -182,7 +168,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         return false;
     }
 
-
     private void initializeCategories() {
         for (Material mat : Material.values()) {
             String name = mat.name();
@@ -209,9 +194,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         }
     }
     private void loadConfigCache() {
-        this.useMinecraftFormat = config.getBoolean("use-minecraft-format", true);
-        this.showAdvancedTooltips = config.getBoolean("show-advanced-tooltips", true);
-        this.debug = config.getBoolean("debug", false);
         this.chatCommandIEnabled = config.getBoolean("chat-commands-enabled.i", true);
         this.chatCommandInvEnabled = config.getBoolean("chat-commands-enabled.inv", true);
 
@@ -469,7 +451,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         return (currentTime - sharedTime) > fiveMinutesInMillis;
     }
 
-
     private boolean isViewOnly(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
 
@@ -493,13 +474,13 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
             return;
         }
 
-        if (message.contains("[i]")) {
+        if (message.contains("[i]") || message.contains("[item]")) {
             if (!chatCommandIEnabled) {
                 return;
             }
 
             event.setCancelled(true);
-            runEntityTask(player, () -> handleItemDisplay(player, message));
+            runEntityTask(player, () -> ItemLinkHandler.handleItemLinkMessage(player, message));
             return;
         }
 
@@ -982,348 +963,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         for (Player player : Bukkit.getOnlinePlayers()) {
             removeViewOnlyItems(player);
         }
-    }
-
-    private void handleItemDisplay(Player player, String originalMessage) {
-        ItemStack item = player.getInventory().getItemInMainHand();
-
-        if (item == null || item.getType() == Material.AIR) {
-            player.sendMessage(RED + "You are not holding any item!");
-            return;
-        }
-
-        String displayName = getCleanPlayerName(player);
-        String prefix = getPlayerPrefix(player);
-
-        String itemDisplayText = AQUA + "[" + getItemDisplayName(item) + "]";
-        String modifiedMessage = originalMessage.replace("[i]", itemDisplayText);
-
-        TextComponent itemComponent = new TextComponent(itemDisplayText);
-
-        String hoverText = buildMinecraftTooltip(item);
-        itemComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new Text(hoverText)));
-
-        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            TextComponent fullMessage = new TextComponent();
-
-            if (!prefix.isEmpty()) {
-                TextComponent prefixComponent = createColoredComponent(prefix);
-                fullMessage.addExtra(prefixComponent);
-            }
-
-            TextComponent nameComponent = new TextComponent(displayName);
-            nameComponent.setColor(net.md_5.bungee.api.ChatColor.WHITE);
-            fullMessage.addExtra(nameComponent);
-
-            TextComponent colonComponent = new TextComponent(": ");
-            colonComponent.setColor(net.md_5.bungee.api.ChatColor.WHITE);
-            fullMessage.addExtra(colonComponent);
-
-            String beforeItem = modifiedMessage.substring(0, modifiedMessage.indexOf(itemDisplayText));
-            if (!beforeItem.isEmpty()) {
-                TextComponent beforeComponent = createColoredComponent(beforeItem);
-                fullMessage.addExtra(beforeComponent);
-            }
-
-            fullMessage.addExtra(itemComponent);
-
-            String afterItem = modifiedMessage.substring(modifiedMessage.indexOf(itemDisplayText) + itemDisplayText.length());
-            if (!afterItem.isEmpty()) {
-                TextComponent afterComponent = createColoredComponent(afterItem);
-                fullMessage.addExtra(afterComponent);
-            }
-
-            onlinePlayer.spigot().sendMessage(fullMessage);
-        }
-    }
-
-
-    private String buildMinecraftTooltip(ItemStack item) {
-        if (!this.useMinecraftFormat) {
-            return buildLegacyTooltip(item);
-        }
-
-        StringBuilder tooltip = new StringBuilder();
-
-        String itemName = getItemDisplayName(item);
-        boolean hasEnchants = !item.getEnchantments().isEmpty();
-        boolean hasCustomName = item.hasItemMeta() && item.getItemMeta().hasDisplayName();
-
-        if (hasCustomName) {
-            tooltip.append("§b§l").append(itemName);
-        } else if (hasEnchants) {
-            tooltip.append("§b§l").append(formatItemName(item.getType().name()));
-        } else {
-            tooltip.append("§f§l").append(formatItemName(item.getType().name()));
-        }
-
-        if (item.hasItemMeta() && item.getItemMeta().hasLore()) {
-            List<String> lore = item.getItemMeta().getLore();
-            if (lore != null) {
-                for (String loreLine : lore) {
-                    tooltip.append("\n§r").append(loreLine);
-                }
-            }
-        }
-
-        if ((item.getType() == Material.TIPPED_ARROW ||
-                item.getType() == Material.POTION ||
-                item.getType() == Material.SPLASH_POTION ||
-                item.getType() == Material.LINGERING_POTION) && item.hasItemMeta()) {
-            org.bukkit.inventory.meta.PotionMeta potionMeta = (org.bukkit.inventory.meta.PotionMeta) item.getItemMeta();
-
-            boolean hasEffects = false;
-
-            if (potionMeta.hasCustomEffects() && !potionMeta.getCustomEffects().isEmpty()) {
-                for (org.bukkit.potion.PotionEffect effect : potionMeta.getCustomEffects()) {
-                    tooltip.append("§9").append(formatPotionEffect(effect));
-                    hasEffects = true;
-                }
-            }
-
-            if (!hasEffects) {
-                try {
-                    PotionType potionType = potionMeta.getBasePotionType();
-                    if (potionType != null && potionType != PotionType.WATER) {
-                        tooltip.append("\n");
-                        String effectText = formatPotionTypeWithDuration(potionType);
-                        tooltip.append("§9").append(effectText);
-                        hasEffects = true;
-                    } else if (potionType == PotionType.WATER) {
-                        tooltip.append("\n§5No Effects");
-                        hasEffects = true;
-                    }
-                } catch (NoSuchMethodError | Exception legacyError) {
-                    try {
-                        org.bukkit.potion.PotionData data = potionMeta.getBasePotionData();
-                        if (data != null && data.getType() != PotionType.WATER) {
-                            tooltip.append("\n");
-                            String effectText = formatPotionDataWithDuration(data);
-                            tooltip.append("\n§9").append(effectText);
-                            hasEffects = true;
-                        } else if (data != null && data.getType() == PotionType.WATER) {
-                            tooltip.append("\n§5No Effects");
-                            hasEffects = true;
-                        }
-                    } catch (Exception e) {
-                        if (debug) {
-                            getLogger().warning("Error reading potion data: " + e.getMessage());
-                        }
-                    }
-                }
-            }
-
-            if (!hasEffects) {
-                tooltip.append("\n§5No Effects");
-            }
-            tooltip.append("\n");
-        }
-
-        if (item.getType() == Material.FIREWORK_ROCKET && item.hasItemMeta()) {
-            org.bukkit.inventory.meta.FireworkMeta fireworkMeta = (org.bukkit.inventory.meta.FireworkMeta) item.getItemMeta();
-
-            int power = fireworkMeta.getPower();
-
-            if (power == 0) {
-                tooltip.append("\n§7Flight Duration: §f1");
-            } else {
-                tooltip.append("\n§7Flight Duration: §f").append(power);
-            }
-
-
-
-            if (fireworkMeta.hasEffects()) {
-                List<org.bukkit.FireworkEffect> effects = fireworkMeta.getEffects();
-                if (effects != null && !effects.isEmpty()) {
-                    for (org.bukkit.FireworkEffect effect : effects) {
-                        if (effect != null) {
-                            tooltip.append("\n§8").append(formatFireworkEffect(effect));
-                        }
-                    }
-                }
-            }
-        } else if (item.getType() == Material.FIREWORK_ROCKET) {
-            tooltip.append("\n§7Flight Duration: §f1");
-        }
-
-        Map<Enchantment, Integer> enchantments = item.getEnchantments();
-        if (!enchantments.isEmpty()) {
-            List<Map.Entry<Enchantment, Integer>> sortedEnchants = new ArrayList<>(enchantments.entrySet());
-            sortedEnchants.sort((a, b) -> {
-                int aOrder = getEnchantmentOrder(a.getKey());
-                int bOrder = getEnchantmentOrder(b.getKey());
-                return Integer.compare(aOrder, bOrder);
-            });
-
-            for (Map.Entry<Enchantment, Integer> entry : sortedEnchants) {
-                Enchantment enchant = entry.getKey();
-                int level = entry.getValue();
-                String enchantName = formatEnchantmentName(enchant);
-                String colorCode = enchant.isCursed() ? "§c" : "§7";
-
-                tooltip.append("\n").append(colorCode).append(enchantName);
-
-                if (level > 1 || enchant.getMaxLevel() > 1) {
-                    tooltip.append(" ").append(toRomanNumeral(level));
-                }
-            }
-        }
-
-        String attributeText = getItemAttributes(item);
-        if (!attributeText.isEmpty()) {
-            tooltip.append("\n").append(attributeText);
-        }
-
-        if (item.getType().getMaxDurability() > 0 && item.getDurability() > 0) {
-            int currentDurability = item.getType().getMaxDurability() - item.getDurability();
-            int maxDurability = item.getType().getMaxDurability();
-            tooltip.append("\n§7Durability: §f").append(currentDurability).append(" / ").append(maxDurability);
-        }
-
-        String category = getItemCategory(item.getType());
-        if (!category.isEmpty()) {
-            tooltip.append("\n§9§o").append(category);
-        }
-        tooltip.append(" | §9§oMinecraft");
-
-        if (showAdvancedTooltips) {
-            tooltip.append("\n§8minecraft:").append(item.getType().name().toLowerCase());
-
-//            int componentCount = countItemComponents(item);
-//            tooltip.append("\n§8").append(componentCount).append(" component(s)");
-        }
-
-        return tooltip.toString();
-    }
-
-    private int getEnchantmentOrder(Enchantment enchant) {
-        return enchantmentOrderCache.getOrDefault(enchant.getKey().getKey(), 999);
-    }
-
-    private String buildLegacyTooltip(ItemStack item) {
-        StringBuilder hoverText = new StringBuilder();
-
-        String itemName = getItemDisplayName(item);
-        org.bukkit.ChatColor nameColor = getItemRarityColor(item);
-
-        if (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) {
-            hoverText.append(itemName);
-        } else {
-            hoverText.append(nameColor).append(formatItemName(itemName));
-        }
-
-        if (item.hasItemMeta() && item.getItemMeta().hasLore()) {
-            List<String> lore = item.getItemMeta().getLore();
-            if (lore != null && !lore.isEmpty()) {
-                for (String loreLine : lore) {
-                    if (loreLine != null && !loreLine.trim().isEmpty()) {
-                        hoverText.append("\n").append(loreLine);
-                    }
-                }
-            }
-        }
-
-        if (item.getAmount() > 1) {
-            hoverText.append("\n").append(GRAY).append("Amount: ")
-                    .append(WHITE).append(item.getAmount());
-        }
-
-        Map<Enchantment, Integer> enchantments = item.getEnchantments();
-        if (!enchantments.isEmpty()) {
-            List<Map.Entry<Enchantment, Integer>> sortedEnchantments = new ArrayList<>(enchantments.entrySet());
-            sortedEnchantments.sort((a, b) -> {
-                boolean aIsCurse = a.getKey().isCursed();
-                boolean bIsCurse = b.getKey().isCursed();
-
-                if (aIsCurse != bIsCurse) {
-                    return aIsCurse ? 1 : -1;
-                }
-
-                return a.getKey().getKey().getKey().compareTo(b.getKey().getKey().getKey());
-            });
-
-            for (Map.Entry<Enchantment, Integer> entry : sortedEnchantments) {
-                Enchantment enchant = entry.getKey();
-                int level = entry.getValue();
-
-                String enchantName = formatEnchantmentName(enchant);
-                org.bukkit.ChatColor enchantColor = getEnchantmentColor(enchant, level);
-
-                hoverText.append("\n").append(enchantColor).append(enchantName);
-                if (level > 1 || enchant.getMaxLevel() > 1) {
-                    hoverText.append(" ").append(toRomanNumeral(level));
-                }
-            }
-        }
-
-        if (item.getType().getMaxDurability() > 0) {
-            int currentDurability = item.getType().getMaxDurability() - item.getDurability();
-            int maxDurability = item.getType().getMaxDurability();
-
-            if (item.getDurability() > 0) {
-                double durabilityPercent = (double) currentDurability / maxDurability * 100;
-                org.bukkit.ChatColor durabilityColor = getDurabilityColor(durabilityPercent);
-
-                hoverText.append("\n").append(GRAY).append("Durability: ")
-                        .append(durabilityColor).append(currentDurability).append("/").append(maxDurability)
-                        .append(" (").append(String.format("%.1f", durabilityPercent)).append("%)");
-            }
-        }
-
-        hoverText.append("\n\n").append(DARK_GRAY).append(ITALIC)
-                .append("minecraft:"+item.getType().toString().toLowerCase());
-
-        String description = getItemDescription(item);
-        if (!description.isEmpty()) {
-            hoverText.append("\n").append(DARK_GRAY).append(BOLD)
-                    .append(description);
-        }
-
-        return hoverText.toString();
-    }
-
-    private String getItemCategory(Material material) {
-        return categoryCache.getOrDefault(material, "Miscellaneous");
-    }
-
-    private String getItemDescription(ItemStack item) {
-        Material type = item.getType();
-        String materialName = type.name();
-
-        if (type == Material.PLAYER_HEAD && item.hasItemMeta()) {
-            ItemMeta meta = item.getItemMeta();
-            if (headOwnerKey != null && meta.getPersistentDataContainer().has(headOwnerKey, PersistentDataType.STRING)) {
-                String headOwner = meta.getPersistentDataContainer().get(headOwnerKey, PersistentDataType.STRING);
-
-                return "A head which belongings to " + headOwner;
-            }
-        }
-
-        if (itemDescriptions.containsKey(materialName)) {
-            return itemDescriptions.get(materialName);
-        }
-
-        for (Map.Entry<String, String> entry : patternDescriptions.entrySet()) {
-            if (materialName.contains(entry.getKey())) {
-                if (entry.getKey().equals("SHULKER_BOX")) {
-                    return entry.getValue();
-                } else if (entry.getKey().equals("SPAWN_EGG")) {
-                    String mobName = materialName.replace("_SPAWN_EGG", "").toLowerCase().replace("_", " ");
-                    return entry.getValue().replace("{mob_name}", mobName);
-                }
-            }
-        }
-
-        return "";
-    }
-
-    private String toRomanNumeral(int number) {
-        if (number <= 0) return "";
-        if (number < ROMAN_NUMERALS.length) {
-            return ROMAN_NUMERALS[number];
-        }
-        return String.valueOf(number);
     }
 
     public static String getCleanPlayerName(Player player) {
