@@ -134,6 +134,7 @@ public class ViewInvNormal {
         meta.getPersistentDataContainer().set(viewOnlyKey, PersistentDataType.STRING, VIEW_ONLY_MARKER);
         item.setItemMeta(meta);
     }
+
     public static void handleInventoryDisplay(Player player, String originalMessage) {
         String displayName = getCleanPlayerName(player);
         String prefix = getPlayerPrefix(player);
