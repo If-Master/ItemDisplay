@@ -212,6 +212,9 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         this.useMinecraftFormat = config.getBoolean("use-minecraft-format", true);
         this.showAdvancedTooltips = config.getBoolean("show-advanced-tooltips", true);
         this.debug = config.getBoolean("debug", false);
+        this.chatCommandIEnabled = config.getBoolean("chat-commands-enabled.i", true);
+        this.chatCommandInvEnabled = config.getBoolean("chat-commands-enabled.inv", true);
+
     }
 
     @Override
