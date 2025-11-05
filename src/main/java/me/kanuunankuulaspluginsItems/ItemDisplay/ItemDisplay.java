@@ -53,7 +53,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
     public static final String INVENTORY_TITLE_SUFFIX = "'s Inventory";
 
     public static final String VIEW_ONLY_MARKET_TWO = "itemdisplay_viewonly";
-    private static final String[] ROMAN_NUMERALS = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
 
     private boolean chatCommandIEnabled;
     private boolean chatCommandInvEnabled;
@@ -61,16 +60,11 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
 
     private boolean isFolia = false;
 
-    public static final Map<String, Integer> enchantmentOrderCache = new HashMap<>();
-    public static final Map<Material, Double> attackDamageCache = new EnumMap<>(Material.class);
-    public static final Map<Material, Double> attackSpeedCache = new EnumMap<>(Material.class);
     private static final EnumMap<Material, String> categoryCache = new EnumMap<>(Material.class);
 
     public static Map<UUID, UUID> viewingInventories = new HashMap<>();
     public static Map<UUID, Long> sharedInventoryTimestamps = new HashMap<>();
-    private Map<String, String> itemDescriptions = new HashMap<>();
-    private Map<String, String> patternDescriptions = new HashMap<>();
-
+    
     public static Set<UUID> sharedInventories = new HashSet<>();
 
     public static void Log(String Message, String type) {
@@ -96,8 +90,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
 
         saveDefaultConfig();
         config = getConfig();
-        saveDefaultItemDescriptions();
-        loadItemDescriptions();
 
         if (!config.contains("debug")) {
             config.set("debug", false);
@@ -248,7 +240,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
                 reloadConfig();
                 config = getConfig();
                 loadConfigCache();
-                loadItemDescriptions();
                 sender.sendMessage(GREEN + "Item descriptions reloaded!");
                 return true;
             }
@@ -379,64 +370,6 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         }
 
         return completions;
-    }
-
-    private void saveDefaultItemDescriptions() {
-        File itemDescFile = new File(getDataFolder(), "item-descriptions.yml");
-        if (!itemDescFile.exists()) {
-            try {
-                itemDescFile.getParentFile().mkdirs();
-                itemDescFile.createNewFile();
-
-                FileConfiguration itemConfig = YamlConfiguration.loadConfiguration(itemDescFile);
-                itemConfig.set("descriptions.BARRIER", "TBH, I will use this to let you know, these are just like a tab part extra to a item");
-                itemConfig.set("descriptions.ELYTRA", "Allows flight when worn");
-                itemConfig.set("descriptions.TOTEM_OF_UNDYING", "Saves you from death");
-                itemConfig.set("descriptions.BEACON", "Provides area effects");
-                itemConfig.set("descriptions.NETHER_STAR", "Dropped by the Wither");
-                itemConfig.set("descriptions.DRAGON_EGG", "A trophy from the End");
-                itemConfig.set("descriptions.OAK_BOAT", "Bro, why? It's a boat. Nothing special");
-                itemConfig.set("descriptions.COMMAND_BLOCK", "Alright a Illegal item ;) Probably eating it rn");
-                itemConfig.set("descriptions.PORKCHOP", "The flesh who walk the fields");
-
-                itemConfig.set("patterns.SHULKER_BOX", "Portable storage container");
-                itemConfig.set("patterns.SPAWN_EGG", "Spawns a {mob_name}");
-
-                itemConfig.save(itemDescFile);
-                getLogger().info("Created default item-descriptions.yml");
-            } catch (Exception e) {
-                getLogger().warning("Could not create item-descriptions.yml: " + e.getMessage());
-            }
-        }
-    }
-
-    private void loadItemDescriptions() {
-        File itemDescFile = new File(getDataFolder(), "item-descriptions.yml");
-        if (itemDescFile.exists()) {
-            try {
-                FileConfiguration itemConfig = YamlConfiguration.loadConfiguration(itemDescFile);
-
-                ConfigurationSection descriptions = itemConfig.getConfigurationSection("descriptions");
-                if (descriptions != null) {
-                    itemDescriptions.clear();
-                    for (String key : descriptions.getKeys(false)) {
-                        itemDescriptions.put(key, descriptions.getString(key));
-                    }
-                }
-
-                ConfigurationSection patterns = itemConfig.getConfigurationSection("patterns");
-                if (patterns != null) {
-                    patternDescriptions.clear();
-                    for (String key : patterns.getKeys(false)) {
-                        patternDescriptions.put(key, patterns.getString(key));
-                    }
-                }
-
-                getLogger().info("Loaded " + itemDescriptions.size() + " item descriptions and " + patternDescriptions.size() + " pattern descriptions");
-            } catch (Exception e) {
-                getLogger().warning("Could not load item-descriptions.yml: " + e.getMessage());
-            }
-        }
     }
 
     private boolean isInventoryExpired(UUID playerUUID) {
