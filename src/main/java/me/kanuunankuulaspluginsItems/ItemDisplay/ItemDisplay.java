@@ -68,6 +68,8 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
     private boolean useMinecraftFormat;
     private boolean showAdvancedTooltips;
     private boolean debug;
+    private boolean chatCommandIEnabled;
+    private boolean chatCommandInvEnabled;
 
 
     private boolean isFolia = false;
@@ -124,6 +126,16 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
             config.set("show-advanced-tooltips", true);
             saveConfig();
         }
+        if (!config.contains("chat-commands-enabled.i")) {
+            config.set("chat-commands-enabled.i", true);
+            saveConfig();
+        }
+
+        if (!config.contains("chat-commands-enabled.inv")) {
+            config.set("chat-commands-enabled.inv", true);
+            saveConfig();
+        }
+
         loadConfigCache();
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -469,18 +481,30 @@ public class ItemDisplay extends JavaPlugin implements Listener, CommandExecutor
         Player player = event.getPlayer();
         String message = event.getMessage();
         if (isPlayerMuted(player)) {
-            event.setCancelled(true);
+            if ((!chatCommandIEnabled) && (!chatCommandInvEnabled)) {
+                return;
+
+            }
+                event.setCancelled(true);
             player.sendMessage(RED + "You are muted and cannot send messages!");
             return;
         }
 
         if (message.contains("[i]")) {
+            if (!chatCommandIEnabled) {
+                return;
+            }
+
             event.setCancelled(true);
             runEntityTask(player, () -> handleItemDisplay(player, message));
             return;
         }
 
         if (message.contains("[inv]")) {
+            if (!chatCommandInvEnabled) {
+                return;
+            }
+
             event.setCancelled(true);
             runEntityTask(player, () -> handleInventoryDisplay(player, message));
         }
