@@ -1,8 +1,6 @@
-
-# Plugin settings
-# Important note, the item pattern might not work at the moment, is a later update.
 show-inventory-info: true
 
 chat-commands-enabled:
   i: true
   inv: true
+
