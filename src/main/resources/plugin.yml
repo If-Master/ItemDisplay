@@ -1,9 +1,9 @@
 name: ItemDisplay
-version: '1.1.1'
+version: '1.1.2'
 main: me.kanuunankuulaspluginsItems.ItemDisplay.ItemDisplay
 api-version: '1.21'
 authors: [ Kanuunankuula (IF_Master) ]
-description: Shows information over item in chat / Can also be used as a inventory/Enderchest viewer
+description: Shows information over item in chat
 softdepend: [EssentialsX, HeadHunter]
 folia-supported: true
 
